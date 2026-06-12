@@ -1,0 +1,175 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================
+// PROYECTO YO — Append-Only Database Schema
+// All tables use soft-delete (deletedAt)
+// NEVER hard-delete records
+// ============================================
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  portfolio   String    // PHYSICAL | MENTAL | ECONOMIC
+  isPinned    Boolean   @default(false)
+  deadline    DateTime?
+  status      String    @default("ACTIVE") // ACTIVE | COMPLETED | ARCHIVED
+  sortOrder   Int       @default(0)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  timeBlockTasks  TimeBlockTask[]
+  timeAllocations TimeAllocation[]
+}
+
+model TimeBlock {
+  id           String    @id @default(cuid())
+  title        String
+  startTime    DateTime
+  endTime      DateTime
+  totalMinutes Int
+  status       String    @default("SCHEDULED") // SCHEDULED | ACTIVE | COMPLETED
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  tasks        TimeBlockTask[]
+  allocations  TimeAllocation[]
+  moodCheckin  MoodCheckin?
+}
+
+model TimeBlockTask {
+  id          String    @id @default(cuid())
+  timeBlockId String
+  taskId      String
+  isOriginal  Boolean   @default(true) // true = planned, false = added during block
+  
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id])
+  task        Task      @relation(fields: [taskId], references: [id])
+}
+
+model TimeAllocation {
+  id          String    @id @default(cuid())
+  timeBlockId String
+  taskId      String
+  percentage  Float     // 0-100
+  minutes     Int
+  type        String    // PLANNED | UNPLANNED
+  
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id])
+  task        Task      @relation(fields: [taskId], references: [id])
+}
+
+model MoodCheckin {
+  id                String    @id @default(cuid())
+  timeBlockId       String?   @unique
+  mood              Int       // 1-5 (💀 to 🔥)
+  energyLevel       Int       // 1-10
+  satisfactionLevel Int       // 1-5
+  
+  createdAt         DateTime  @default(now())
+  deletedAt         DateTime?
+
+  timeBlock         TimeBlock? @relation(fields: [timeBlockId], references: [id])
+}
+
+model WeeklyAssessment {
+  id             String    @id @default(cuid())
+  weekNumber     Int
+  year           Int
+  
+  // PHQ-4 scores (0-4 each, 4 questions)
+  phq4Q1         Int       @default(0)
+  phq4Q2         Int       @default(0)
+  phq4Q3         Int       @default(0)
+  phq4Q4         Int       @default(0)
+  phq4Total      Int       @default(0)
+  
+  // Guided Journaling
+  journalText    String?
+  journalAudioUrl String?
+  journalPrompt  String?   // The question that guided this week
+  sentimentScore Float?    // -1 to 1 (negative to positive)
+  keywords       String?   // JSON array stored as string
+  aiSummary      String?   // AI-generated conclusions
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  @@unique([weekNumber, year])
+}
+
+model MealLog {
+  id               String    @id @default(cuid())
+  description      String
+  estimatedCalories Int?
+  protein          Float?    // grams
+  carbs            Float?    // grams
+  fat              Float?    // grams
+  mealType         String    // BREAKFAST | LUNCH | DINNER | SNACK
+  photoUrl         String?
+  rawAiResponse    String?   // Full AI response for debugging
+  
+  createdAt        DateTime  @default(now())
+  deletedAt        DateTime?
+}
+
+model WeightLog {
+  id        String    @id @default(cuid())
+  weight    Float     // in kg
+  
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+}
+
+model SleepLog {
+  id                String    @id @default(cuid())
+  totalHours        Float
+  qualityPercentage Int       // 0-100
+  imageUrl          String?
+  rawAiResponse     String?
+  
+  createdAt         DateTime  @default(now())
+  deletedAt         DateTime?
+}
+
+model EarningsLog {
+  id          String    @id @default(cuid())
+  amount      Float
+  currency    String    @default("EUR")
+  source      String
+  description String?
+  
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+}
+
+model UserSettings {
+  id              String  @id @default("default")
+  currentWeight   Float?  // kg
+  targetWeight    Float?  // kg
+  dailyCalorieGoal Int?
+  sleepGoalHours  Float   @default(8)
+  weeklyBudgetHours Int   @default(168)
+  
+  updatedAt       DateTime @updatedAt
+}

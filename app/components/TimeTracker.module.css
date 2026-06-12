@@ -1,0 +1,167 @@
+/* ═══════════════════════════════════════════════
+   TimeTracker Dialog
+   ═══════════════════════════════════════════════ */
+
+/* ── Dialog overrides ── */
+.dialog {
+  max-height: min(92dvh, 800px);
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.title {
+  font-size: clamp(1.125rem, 3vw, 1.5rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text-primary), var(--text-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.totalTime {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-info);
+  background: hsl(210, 70%, 55%, 0.12);
+  border-radius: var(--radius-full);
+  margin-left: var(--space-xs);
+}
+
+/* ── Sliders section ── */
+.sliders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* ── Add unplanned ── */
+.addSection {
+  display: flex;
+  justify-content: center;
+}
+
+.addRow {
+  display: flex;
+  gap: var(--space-sm);
+  width: 100%;
+  animation: slide-up var(--transition-slow) both;
+}
+
+.addInput {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Total allocation bar ── */
+.totalBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-base);
+}
+
+.totalBar[data-status='ok'] {
+  border-color: hsl(145, 65%, 50%, 0.3);
+}
+
+.totalBar[data-status='error'] {
+  border-color: hsl(0, 75%, 55%, 0.3);
+}
+
+.totalTrack {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.totalFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--transition-base), background var(--transition-base);
+}
+
+.totalBar[data-status='ok'] .totalFill {
+  background: linear-gradient(90deg, var(--color-success), hsl(155, 70%, 55%));
+}
+
+.totalBar[data-status='error'] .totalFill {
+  background: linear-gradient(90deg, var(--color-error), hsl(25, 90%, 55%));
+}
+
+.totalLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  transition: color var(--transition-base);
+}
+
+.totalBar[data-status='ok'] .totalLabel {
+  color: var(--color-success);
+}
+
+.totalBar[data-status='error'] .totalLabel {
+  color: var(--color-error);
+}
+
+/* ── Footer ── */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+
+.saveBtn {
+  width: 100%;
+}
+
+.saveBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}

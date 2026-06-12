@@ -1,0 +1,119 @@
+/* ── TimeSlider Row ── */
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+
+  /* slide-up entry animation */
+  animation: slide-up var(--transition-slow) both;
+}
+
+.row:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.taskName {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Slider row ── */
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.slider {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Override slider thumb color per portfolio */
+.row[data-accent='physical'] .slider::-webkit-slider-thumb {
+  background: linear-gradient(135deg, var(--color-physical), hsl(25, 90%, 55%));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 12px var(--color-physical-glow);
+}
+.row[data-accent='physical'] .slider::-moz-range-thumb {
+  background: linear-gradient(135deg, var(--color-physical), hsl(25, 90%, 55%));
+}
+
+.row[data-accent='economic'] .slider::-webkit-slider-thumb {
+  background: linear-gradient(135deg, var(--color-economic), hsl(170, 70%, 45%));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 12px var(--color-economic-glow);
+}
+.row[data-accent='economic'] .slider::-moz-range-thumb {
+  background: linear-gradient(135deg, var(--color-economic), hsl(170, 70%, 45%));
+}
+
+/* Disabled state (locked) */
+.slider:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.slider:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Data readout ── */
+.data {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 56px;
+  gap: 1px;
+}
+
+.percentage {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.minutes {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  line-height: 1.2;
+}
+
+/* ── Lock button ── */
+.lockBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.lockBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.lockBtn.locked {
+  background: hsl(45, 100%, 55%, 0.1);
+  border-color: hsl(45, 100%, 55%, 0.3);
+}

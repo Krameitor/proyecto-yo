@@ -1,0 +1,81 @@
+/* ── MoodCheckin ── */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Energy ── */
+.energyRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  max-width: 280px;
+}
+
+.energySlider {
+  flex: 1;
+}
+
+.energyValue {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  transition: color var(--transition-base), border-color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+/* Color coding by energy level */
+.energyValue[data-level='1'],
+.energyValue[data-level='2'],
+.energyValue[data-level='3'] {
+  color: var(--energy-low);
+  border-color: hsl(0, 80%, 50%, 0.3);
+}
+
+.energyValue[data-level='4'],
+.energyValue[data-level='5'] {
+  color: var(--energy-mid);
+  border-color: hsl(35, 90%, 55%, 0.3);
+}
+
+.energyValue[data-level='6'],
+.energyValue[data-level='7'],
+.energyValue[data-level='8'] {
+  color: var(--energy-good);
+  border-color: hsl(130, 60%, 50%, 0.3);
+}
+
+.energyValue[data-level='9'],
+.energyValue[data-level='10'] {
+  color: var(--energy-peak);
+  border-color: hsl(200, 80%, 55%, 0.3);
+  box-shadow: 0 0 10px hsl(200, 80%, 55%, 0.2);
+}

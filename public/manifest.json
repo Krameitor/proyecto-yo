@@ -1,0 +1,24 @@
+{
+  "name": "Proyecto Yo — Tiempo como Inversión",
+  "short_name": "Proyecto Yo",
+  "description": "Invierte tu tiempo: 168 horas semanales en salud física, mental y económica",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06060b",
+  "theme_color": "#06060b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
