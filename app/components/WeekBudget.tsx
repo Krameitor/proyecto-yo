@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 
 interface TimeAllocationSummary {
-  portfolio: string;
+  area: string;
   totalMinutes: number;
 }
 
 const TOTAL_WEEKLY_HOURS = 168;
 const SLEEP_HOURS = 56; // 8h × 7 days default
 
-const PORTFOLIO_COLORS: Record<string, string> = {
+const AREA_COLORS: Record<string, string> = {
   SLEEP: 'hsl(230, 30%, 35%)',
   PHYSICAL: 'hsl(16, 85%, 58%)',
   MENTAL: 'hsl(262, 70%, 62%)',
@@ -18,7 +18,7 @@ const PORTFOLIO_COLORS: Record<string, string> = {
   UNASSIGNED: 'hsl(0, 0%, 18%)',
 };
 
-const PORTFOLIO_LABELS: Record<string, string> = {
+const AREA_LABELS: Record<string, string> = {
   SLEEP: '😴 Sueño',
   PHYSICAL: '🏋️ Física',
   MENTAL: '🧠 Mental',
@@ -51,8 +51,8 @@ export default function WeekBudget() {
       if (!res.ok) throw new Error('Failed to load');
       const blocks = await res.json();
 
-      // Aggregate by portfolio
-      const portfolioMinutes: Record<string, number> = {
+      // Aggregate by area
+      const areaMinutes: Record<string, number> = {
         PHYSICAL: 0,
         MENTAL: 0,
         ECONOMIC: 0,
@@ -61,25 +61,26 @@ export default function WeekBudget() {
       for (const block of blocks) {
         if (block.allocations) {
           for (const alloc of block.allocations) {
-            if (alloc.task?.portfolio && portfolioMinutes[alloc.task.portfolio] !== undefined) {
-              portfolioMinutes[alloc.task.portfolio] += alloc.minutes || 0;
+            const allocArea = alloc.task?.area || alloc.task?.portfolio;
+            if (allocArea && areaMinutes[allocArea] !== undefined) {
+              areaMinutes[allocArea] += alloc.minutes || 0;
             }
           }
         }
       }
 
       setAllocations(
-        Object.entries(portfolioMinutes).map(([portfolio, totalMinutes]) => ({
-          portfolio,
+        Object.entries(areaMinutes).map(([area, totalMinutes]) => ({
+          area,
           totalMinutes,
         }))
       );
     } catch {
       // Use empty defaults
       setAllocations([
-        { portfolio: 'PHYSICAL', totalMinutes: 0 },
-        { portfolio: 'MENTAL', totalMinutes: 0 },
-        { portfolio: 'ECONOMIC', totalMinutes: 0 },
+        { area: 'PHYSICAL', totalMinutes: 0 },
+        { area: 'MENTAL', totalMinutes: 0 },
+        { area: 'ECONOMIC', totalMinutes: 0 },
       ]);
     }
     setIsLoaded(true);
@@ -87,18 +88,18 @@ export default function WeekBudget() {
 
   // Calculate segments for donut
   const sleepHours = SLEEP_HOURS;
-  const physicalHours = (allocations.find((a) => a.portfolio === 'PHYSICAL')?.totalMinutes || 0) / 60;
-  const mentalHours = (allocations.find((a) => a.portfolio === 'MENTAL')?.totalMinutes || 0) / 60;
-  const economicHours = (allocations.find((a) => a.portfolio === 'ECONOMIC')?.totalMinutes || 0) / 60;
+  const physicalHours = (allocations.find((a) => a.area === 'PHYSICAL')?.totalMinutes || 0) / 60;
+  const mentalHours = (allocations.find((a) => a.area === 'MENTAL')?.totalMinutes || 0) / 60;
+  const economicHours = (allocations.find((a) => a.area === 'ECONOMIC')?.totalMinutes || 0) / 60;
   const assignedHours = sleepHours + physicalHours + mentalHours + economicHours;
   const unassignedHours = Math.max(0, TOTAL_WEEKLY_HOURS - assignedHours);
 
   const segments = [
-    { key: 'SLEEP', hours: sleepHours, color: PORTFOLIO_COLORS.SLEEP },
-    { key: 'PHYSICAL', hours: physicalHours, color: PORTFOLIO_COLORS.PHYSICAL },
-    { key: 'MENTAL', hours: mentalHours, color: PORTFOLIO_COLORS.MENTAL },
-    { key: 'ECONOMIC', hours: economicHours, color: PORTFOLIO_COLORS.ECONOMIC },
-    { key: 'UNASSIGNED', hours: unassignedHours, color: PORTFOLIO_COLORS.UNASSIGNED },
+    { key: 'SLEEP', hours: sleepHours, color: AREA_COLORS.SLEEP },
+    { key: 'PHYSICAL', hours: physicalHours, color: AREA_COLORS.PHYSICAL },
+    { key: 'MENTAL', hours: mentalHours, color: AREA_COLORS.MENTAL },
+    { key: 'ECONOMIC', hours: economicHours, color: AREA_COLORS.ECONOMIC },
+    { key: 'UNASSIGNED', hours: unassignedHours, color: AREA_COLORS.UNASSIGNED },
   ];
 
   // Build conic-gradient
@@ -222,7 +223,7 @@ export default function WeekBudget() {
                 }}
               />
               <span style={{ color: 'var(--text-secondary)', flex: 1 }}>
-                {PORTFOLIO_LABELS[seg.key]}
+                {AREA_LABELS[seg.key]}
               </span>
               <span className="font-data" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
                 {seg.hours.toFixed(seg.hours % 1 === 0 ? 0 : 1)}h

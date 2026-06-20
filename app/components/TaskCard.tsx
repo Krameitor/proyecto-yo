@@ -6,7 +6,8 @@ export interface Task {
   id: string
   title: string
   description: string | null
-  portfolio: 'PHYSICAL' | 'MENTAL' | 'ECONOMIC'
+  area: 'PHYSICAL' | 'MENTAL' | 'ECONOMIC'
+  portfolio?: string // fallback
   isPinned: boolean
   deadline: string | null
   status: string
@@ -86,13 +87,13 @@ function getDegradation(deadline: string | null): DegradationInfo {
   }
 }
 
-const PORTFOLIO_BADGE: Record<string, string> = {
+const AREA_BADGE: Record<string, string> = {
   PHYSICAL: 'badge--physical',
   MENTAL: 'badge--mental',
   ECONOMIC: 'badge--economic',
 }
 
-const PORTFOLIO_LABEL: Record<string, string> = {
+const AREA_LABEL: Record<string, string> = {
   PHYSICAL: '🏋️ Física',
   MENTAL: '🧠 Mental',
   ECONOMIC: '💰 Económica',
@@ -229,8 +230,8 @@ export default function TaskCard({
           )}
 
           <div className="task-card__meta">
-            <span className={`badge ${PORTFOLIO_BADGE[task.portfolio] || ''}`}>
-              {PORTFOLIO_LABEL[task.portfolio] || task.portfolio}
+            <span className={`badge ${AREA_BADGE[task.area || task.portfolio || ''] || ''}`}>
+              {AREA_LABEL[task.area || task.portfolio || ''] || task.area || task.portfolio}
             </span>
 
             {degradation.label && (

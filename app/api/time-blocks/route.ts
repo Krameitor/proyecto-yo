@@ -22,22 +22,16 @@ export async function GET(request: NextRequest) {
         tasks: {
           where: { deletedAt: null },
           include: {
-            task: {
-              select: { id: true, title: true, portfolio: true, status: true },
-            },
+            task: true,
           },
         },
         allocations: {
           where: { deletedAt: null },
-        },
-        moodCheckin: {
-          select: {
-            id: true,
-            mood: true,
-            energyLevel: true,
-            satisfactionLevel: true,
+          include: {
+            task: true,
           },
         },
+        moodCheckin: true,
       },
       orderBy: { startTime: 'asc' },
     })
@@ -56,11 +50,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, startTime, endTime, taskIds } = body
+    const { title, startTime, endTime, area, taskIds } = body
 
-    if (!title || !startTime || !endTime) {
+    if (!title || !startTime || !endTime || !area) {
       return NextResponse.json(
-        { error: 'title, startTime, and endTime are required' },
+        { error: 'title, startTime, endTime, and area are required' },
+        { status: 400 }
+      )
+    }
+
+    const validAreas = ['PHYSICAL', 'MENTAL', 'ECONOMIC']
+    if (!validAreas.includes(area)) {
+      return NextResponse.json(
+        { error: `area must be one of: ${validAreas.join(', ')}` },
         { status: 400 }
       )
     }
@@ -82,6 +84,7 @@ export async function POST(request: NextRequest) {
         startTime: start,
         endTime: end,
         totalMinutes,
+        area,
         tasks: {
           create:
             taskIds?.map((taskId: string) => ({
@@ -94,9 +97,7 @@ export async function POST(request: NextRequest) {
         tasks: {
           where: { deletedAt: null },
           include: {
-            task: {
-              select: { id: true, title: true, portfolio: true },
-            },
+            task: true,
           },
         },
       },

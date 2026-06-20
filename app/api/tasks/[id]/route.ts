@@ -8,7 +8,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = await request.json()
-    const { title, description, status, isPinned, deadline, sortOrder } = body
+    const { title, description, area, status, isPinned, deadline, sortOrder } = body
 
     // Verify task exists and is not soft-deleted
     const existing = await prisma.task.findFirst({
@@ -24,6 +24,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       data: {
         ...(title !== undefined && { title }),
         ...(description !== undefined && { description }),
+        ...(area !== undefined && { area }),
         ...(status !== undefined && { status }),
         ...(isPinned !== undefined && { isPinned }),
         ...(deadline !== undefined && {

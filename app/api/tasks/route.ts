@@ -1,16 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// GET /api/tasks?portfolio=PHYSICAL|MENTAL|ECONOMIC
+// GET /api/tasks?area=PHYSICAL|MENTAL|ECONOMIC
+// GET /api/tasks?unassigned=true&date=YYYY-MM-DD
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const portfolio = searchParams.get('portfolio')
+    const area = searchParams.get('area')
+    const unassigned = searchParams.get('unassigned')
+    const date = searchParams.get('date')
+
+    // Return tasks not assigned to any time block on a given date
+    if (unassigned === 'true' && date) {
+      const dayStart = new Date(`${date}T00:00:00.000Z`)
+      const dayEnd = new Date(`${date}T23:59:59.999Z`)
+
+      const tasks = await prisma.task.findMany({
+        where: {
+          deletedAt: null,
+          status: 'ACTIVE',
+          ...(area ? { area } : {}),
+          NOT: {
+            timeBlockTasks: {
+              some: {
+                deletedAt: null,
+                timeBlock: {
+                  deletedAt: null,
+                  startTime: { gte: dayStart },
+                  endTime: { lte: dayEnd },
+                },
+              },
+            },
+          },
+        },
+        orderBy: [
+          { isPinned: 'desc' },
+          { sortOrder: 'asc' },
+          { createdAt: 'desc' },
+        ],
+      })
+
+      return NextResponse.json(tasks)
+    }
 
     const tasks = await prisma.task.findMany({
       where: {
         deletedAt: null,
-        ...(portfolio ? { portfolio } : {}),
+        ...(area ? { area } : {}),
       },
       orderBy: [
         { isPinned: 'desc' },
@@ -33,19 +69,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, portfolio, deadline } = body
+    const { title, description, area, deadline } = body
 
-    if (!title || !portfolio) {
+    if (!title || !area) {
       return NextResponse.json(
-        { error: 'title and portfolio are required' },
+        { error: 'title and area are required' },
         { status: 400 }
       )
     }
 
-    const validPortfolios = ['PHYSICAL', 'MENTAL', 'ECONOMIC']
-    if (!validPortfolios.includes(portfolio)) {
+    const validAreas = ['PHYSICAL', 'MENTAL', 'ECONOMIC']
+    if (!validAreas.includes(area)) {
       return NextResponse.json(
-        { error: `portfolio must be one of: ${validPortfolios.join(', ')}` },
+        { error: `area must be one of: ${validAreas.join(', ')}` },
         { status: 400 }
       )
     }
@@ -54,7 +90,7 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         description: description ?? null,
-        portfolio,
+        area,
         deadline: deadline ? new Date(deadline) : null,
       },
     })

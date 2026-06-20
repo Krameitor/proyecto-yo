@@ -19,7 +19,7 @@ model Task {
   id          String    @id @default(cuid())
   title       String
   description String?
-  portfolio   String    // PHYSICAL | MENTAL | ECONOMIC
+  area        String    // PHYSICAL | MENTAL | ECONOMIC
   isPinned    Boolean   @default(false)
   deadline    DateTime?
   status      String    @default("ACTIVE") // ACTIVE | COMPLETED | ARCHIVED
@@ -39,6 +39,8 @@ model TimeBlock {
   startTime    DateTime
   endTime      DateTime
   totalMinutes Int
+  area         String    // PHYSICAL | MENTAL | ECONOMIC
+  notes        String?
   status       String    @default("SCHEDULED") // SCHEDULED | ACTIVE | COMPLETED
   
   createdAt    DateTime  @default(now())

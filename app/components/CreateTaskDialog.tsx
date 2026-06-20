@@ -1,12 +1,12 @@
 'use client'
 
-import { useRef, useEffect, useCallback, type FormEvent } from 'react'
+import { useRef, useEffect, useCallback, useState, type FormEvent } from 'react'
 
 interface CreateTaskDialogProps {
   open: boolean
-  portfolio: 'PHYSICAL' | 'MENTAL' | 'ECONOMIC'
   onClose: () => void
   onCreated: (task: unknown) => void
+  initialArea?: 'PHYSICAL' | 'MENTAL' | 'ECONOMIC'
 }
 
 const PORTFOLIO_INFO: Record<string, { emoji: string; label: string; btnClass: string }> = {
@@ -17,12 +17,13 @@ const PORTFOLIO_INFO: Record<string, { emoji: string; label: string; btnClass: s
 
 export default function CreateTaskDialog({
   open,
-  portfolio,
+  initialArea = 'PHYSICAL',
   onClose,
   onCreated,
 }: CreateTaskDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const info = PORTFOLIO_INFO[portfolio]
+  const [area, setArea] = useState(initialArea)
+  const info = PORTFOLIO_INFO[area]
 
   // Sync open prop with native <dialog> state
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function CreateTaskDialog({
           body: JSON.stringify({
             title,
             description,
-            portfolio,
+            area,
             deadline: deadline || undefined,
           }),
         })
@@ -100,7 +101,7 @@ export default function CreateTaskDialog({
         console.error('Failed to create task:', err)
       }
     },
-    [portfolio, onCreated, onClose]
+    [area, onCreated, onClose]
   )
 
   return (
@@ -138,10 +139,10 @@ export default function CreateTaskDialog({
           </button>
         </div>
 
-        {/* Portfolio badge */}
+        {/* Area badge */}
         <div style={{ marginBottom: 'var(--space-md)' }}>
           <span
-            className={`badge badge--${portfolio.toLowerCase()}`}
+            className={`badge badge--${area.toLowerCase()}`}
           >
             {info.label}
           </span>

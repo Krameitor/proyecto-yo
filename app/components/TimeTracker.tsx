@@ -20,7 +20,8 @@ export interface TimeBlock {
 export interface Task {
   id: string;
   title: string;
-  portfolio: 'PHYSICAL' | 'MENTAL' | 'ECONOMIC';
+  area: 'PHYSICAL' | 'MENTAL' | 'ECONOMIC';
+  portfolio?: string;
 }
 
 export interface SliderState {
@@ -41,11 +42,9 @@ export interface TimeAllocationPayload {
 }
 
 interface TimeTrackerProps {
-  timeBlock: TimeBlock;
-  tasks: Task[];
-  isOpen: boolean;
+  timeBlockId: string;
   onClose: () => void;
-  onSave: (allocations: TimeAllocationPayload[]) => void;
+  onSaved: () => void;
 }
 
 /* ═══════════════════════════════════════════════
@@ -114,13 +113,31 @@ function redistribute(
    Component
    ═══════════════════════════════════════════════ */
 export default function TimeTracker({
-  timeBlock,
-  tasks,
-  isOpen,
+  timeBlockId,
   onClose,
-  onSave,
+  onSaved,
 }: TimeTrackerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  
+  const [timeBlock, setTimeBlock] = useState<any>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/time-blocks/${timeBlockId}`)
+      .then(res => res.json())
+      .then(data => {
+        setTimeBlock(data);
+        if (data.tasks) {
+          setTasks(data.tasks.map((bt: any) => bt.task));
+        }
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsLoading(false);
+      });
+  }, [timeBlockId]);
 
   /* ── Slider state ── */
   const initialSliders = useMemo<SliderState[]>(() => {
@@ -133,11 +150,11 @@ export default function TimeTracker({
       percentage: each + (i < leftover ? 1 : 0),
       isLocked: false,
       isPlanned: true,
-      portfolio: t.portfolio,
+      portfolio: t.area || t.portfolio || 'PHYSICAL',
     }));
   }, [tasks]);
 
-  const [sliders, setSliders] = useState<SliderState[]>(initialSliders);
+  const [sliders, setSliders] = useState<SliderState[]>([]);
   const [unplannedCounter, setUnplannedCounter] = useState(0);
   const [newTaskName, setNewTaskName] = useState('');
   const [isAddingTask, setIsAddingTask] = useState(false);
@@ -155,17 +172,14 @@ export default function TimeTracker({
     setSliders(initialSliders);
   }, [initialSliders]);
 
-  /* ── Dialog management ── */
   useEffect(() => {
     const dlg = dialogRef.current;
-    if (!dlg) return;
+    if (!dlg || isLoading) return;
 
-    if (isOpen && !dlg.open) {
+    if (!dlg.open) {
       dlg.showModal();
-    } else if (!isOpen && dlg.open) {
-      dlg.close();
     }
-  }, [isOpen]);
+  }, [isLoading]);
 
   // Safari fallback: close on backdrop click
   useEffect(() => {
@@ -191,7 +205,7 @@ export default function TimeTracker({
   /* ── Computed values ── */
   const totalPercentage = sliders.reduce((sum, s) => sum + s.percentage, 0);
   const isValid = totalPercentage === 100 && mood !== null;
-  const totalHours = (timeBlock.totalMinutes / 60).toFixed(1).replace('.0', '');
+  const totalHours = timeBlock ? (timeBlock.totalMinutes / 60).toFixed(1).replace('.0', '') : '0';
 
   /* ── Handlers ── */
   const handleSliderChange = useCallback(
@@ -271,22 +285,24 @@ export default function TimeTracker({
         }),
       });
 
-      onSave(allocations);
+      onSaved();
       onClose();
     } catch (err) {
       console.error('Error saving time allocation:', err);
     } finally {
       setIsSaving(false);
     }
-  }, [isValid, isSaving, sliders, timeBlock, mood, energy, satisfaction, onSave, onClose]);
+  }, [isValid, isSaving, sliders, timeBlock, mood, energy, satisfaction, onSaved, onClose]);
 
   /* ── Portfolio to accent mapping ── */
-  const portfolioAccent = (p: Task['portfolio']) => {
+  const portfolioAccent = (p: 'PHYSICAL' | 'MENTAL' | 'ECONOMIC') => {
     const map = { PHYSICAL: 'physical', MENTAL: 'mental', ECONOMIC: 'economic' } as const;
-    return map[p];
+    return map[p] || 'physical';
   };
 
   /* ── Render ── */
+  if (isLoading) return null;
+
   return (
     <dialog
       ref={dialogRef}

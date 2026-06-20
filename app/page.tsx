@@ -1,46 +1,27 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import EnergyBar from './components/EnergyBar';
-import WeekBudget from './components/WeekBudget';
-import PortfolioSection from './components/PortfolioSection';
-import TimeTracker, {
-  type TimeBlock,
-  type Task as TimeTask,
-  type TimeAllocationPayload,
-} from './components/TimeTracker';
-import SleepUploader from './components/SleepUploader';
-import MealLogger from './components/MealLogger';
-import WeightTracker from './components/WeightTracker';
-import EarningsTracker from './components/EarningsTracker';
-import WeeklyAssessment from './components/WeeklyAssessment';
-import Timeline from './components/Timeline';
+import { useState } from 'react';
+import BottomNav from './components/BottomNav';
+import DayView from './components/DayView';
+import TasksView from './components/TasksView';
+import DataView from './components/DataView';
 import SettingsDialog from './components/SettingsDialog';
+import EnergyBar from './components/EnergyBar';
 
 export default function Home() {
-  // Demo time tracker state (will be connected to timeline later)
+  const [activeTab, setActiveTab] = useState<'today' | 'tasks' | 'data' | 'settings'>('today');
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTimeBlock, setActiveTimeBlock] = useState<TimeBlock | null>(null);
-  const [demoTasks] = useState<TimeTask[]>([
-    { id: 'demo-1', title: 'Proyecto LEINN', portfolio: 'ECONOMIC' },
-    { id: 'demo-2', title: 'Essay semanal', portfolio: 'MENTAL' },
-    { id: 'demo-3', title: 'Estudio autodidacta', portfolio: 'MENTAL' },
-  ]);
 
-  const handleTimeTrackerSave = useCallback(
-    (allocations: TimeAllocationPayload[]) => {
-      console.log('Time allocations saved:', allocations);
-      setActiveTimeBlock(null);
-    },
-    []
-  );
-
-  const handleEndBlock = useCallback((block: TimeBlock) => {
-    setActiveTimeBlock(block);
-  }, []);
+  const handleTabChange = (tab: 'today' | 'tasks' | 'data' | 'settings') => {
+    if (tab === 'settings') {
+      setShowSettings(true);
+    } else {
+      setActiveTab(tab);
+    }
+  };
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" style={{ paddingBottom: '80px' }}>
       {/* ═══ Header ═══ */}
       <header
         style={{
@@ -81,89 +62,21 @@ export default function Home() {
               })}
             </p>
           </div>
-
-          <button
-            className="btn btn--icon"
-            onClick={() => setShowSettings(true)}
-            style={{ fontSize: '1.25rem' }}
-            aria-label="Configuración"
-          >
-            ⚙️
-          </button>
         </div>
 
-        {/* Energy Bar */}
+        {/* Energy Bar is always visible at the top */}
         <EnergyBar />
       </header>
 
-      {/* ═══ Weekly Budget ═══ */}
-      <section className="section">
-        <WeekBudget />
+      {/* ═══ Main Content Area based on active tab ═══ */}
+      <section>
+        {activeTab === 'today' && <DayView />}
+        {activeTab === 'tasks' && <TasksView />}
+        {activeTab === 'data' && <DataView />}
       </section>
 
-      {/* ═══ Timeline ═══ */}
-      <section className="section">
-        <Timeline onEndBlock={handleEndBlock} />
-      </section>
-
-      {/* ═══ Investment Portfolios (To-Do replacement) ═══ */}
-      <PortfolioSection />
-
-      {/* ═══ Health Section ═══ */}
-      <section className="section">
-        <div className="section__header">
-          <h2 className="section__title">🏥 Salud</h2>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-md)',
-          }}
-        >
-          {/* Sleep Tracker */}
-          <SleepUploader />
-
-          {/* Meal Logger */}
-          <MealLogger />
-
-          {/* Weight Tracker */}
-          <WeightTracker />
-        </div>
-      </section>
-
-      {/* ═══ Mental Health Section ═══ */}
-      <section className="section">
-        <div className="section__header">
-          <h2 className="section__title">🧠 Salud Mental</h2>
-        </div>
-
-        <WeeklyAssessment />
-      </section>
-
-      {/* ═══ Economic Section ═══ */}
-      <section className="section">
-        <div className="section__header">
-          <h2 className="section__title">📈 Económica</h2>
-        </div>
-
-        <EarningsTracker />
-      </section>
-
-      {/* ═══ Footer spacer ═══ */}
-      <div style={{ height: 'var(--space-3xl)' }} />
-
-      {/* ═══ Time Tracker Modal ═══ */}
-      {activeTimeBlock && (
-        <TimeTracker
-          timeBlock={activeTimeBlock}
-          tasks={demoTasks}
-          isOpen={true}
-          onClose={() => setActiveTimeBlock(null)}
-          onSave={handleTimeTrackerSave}
-        />
-      )}
+      {/* ═══ Bottom Navigation ═══ */}
+      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
 
       {/* ═══ Settings Dialog ═══ */}
       <SettingsDialog

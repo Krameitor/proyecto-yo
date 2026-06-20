@@ -8,7 +8,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = await request.json()
-    const { title, status, startTime, endTime } = body
+    const { title, status, startTime, endTime, area, notes } = body
 
     const existing = await prisma.timeBlock.findFirst({
       where: { id, deletedAt: null },
@@ -27,6 +27,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (status !== undefined) updateData.status = status
     if (startTime !== undefined) updateData.startTime = new Date(startTime)
     if (endTime !== undefined) updateData.endTime = new Date(endTime)
+    if (area !== undefined) updateData.area = area
+    if (notes !== undefined) updateData.notes = notes
 
     // Recalculate totalMinutes if times changed
     if (startTime !== undefined || endTime !== undefined) {
@@ -46,12 +48,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         tasks: {
           where: { deletedAt: null },
           include: {
-            task: {
-              select: { id: true, title: true, portfolio: true },
-            },
+            task: true,
           },
         },
-        allocations: { where: { deletedAt: null } },
+        allocations: { where: { deletedAt: null }, include: { task: true } },
       },
     })
 

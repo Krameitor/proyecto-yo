@@ -66,3 +66,34 @@ export async function POST(request: NextRequest, context: RouteContext) {
     )
   }
 }
+
+// GET /api/time-blocks/[id]/allocations
+export async function GET(_request: NextRequest, context: RouteContext) {
+  try {
+    const { id: timeBlockId } = await context.params
+
+    const timeBlock = await prisma.timeBlock.findFirst({
+      where: { id: timeBlockId, deletedAt: null },
+    })
+
+    if (!timeBlock) {
+      return NextResponse.json(
+        { error: 'Time block not found' },
+        { status: 404 }
+      )
+    }
+
+    const allocations = await prisma.timeAllocation.findMany({
+      where: { timeBlockId, deletedAt: null },
+      include: { task: true },
+    })
+
+    return NextResponse.json(allocations)
+  } catch (error) {
+    console.error('GET /api/time-blocks/[id]/allocations error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch allocations' },
+      { status: 500 }
+    )
+  }
+}
