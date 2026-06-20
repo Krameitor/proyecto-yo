@@ -11,6 +11,7 @@ interface CalendarGridProps {
   onTaskToggle: (taskId: string, completed: boolean) => void;
   onAssignTask: (blockId: string, area: string) => void;
   onEmptyClick: (hour: number) => void;
+  isToday: boolean;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -23,6 +24,7 @@ export default function CalendarGrid({
   onTaskToggle,
   onAssignTask,
   onEmptyClick,
+  isToday,
 }: CalendarGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState(() => {
@@ -74,10 +76,12 @@ export default function CalendarGrid({
       <div className="calendar-grid" style={{ height: '1440px' }}>
         
         {/* Current Time Indicator */}
-        <div 
-          className="calendar-current-time-line" 
-          style={{ top: `${currentTimeMinutes}px` }} 
-        />
+        {isToday && (
+          <div 
+            className="calendar-current-time-line" 
+            style={{ top: `${currentTimeMinutes}px` }} 
+          />
+        )}
 
         {/* 24 Hour Rows */}
         {HOURS.map((hour) => (

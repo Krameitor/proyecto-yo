@@ -23,12 +23,17 @@ export default function DayView({}: DayViewProps) {
   });
   const [completedBlockId, setCompletedBlockId] = useState<string | null>(null);
 
+  // Calendar Navigation State
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+
   const fetchBlocks = async () => {
     try {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      const startIso = today.toISOString();
-      const endIso = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
+      const startOfDay = new Date(currentDate);
+      startOfDay.setHours(0,0,0,0);
+      const startIso = startOfDay.toISOString();
+      
+      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+      const endIso = endOfDay.toISOString();
       
       const res = await fetch(`/api/time-blocks?start=${startIso}&end=${endIso}`);
       if (res.ok) {
@@ -44,7 +49,30 @@ export default function DayView({}: DayViewProps) {
 
   useEffect(() => {
     fetchBlocks();
-  }, []);
+  }, [currentDate]);
+
+  const goToPreviousDay = () => {
+    setCurrentDate(prev => new Date(prev.getTime() - 24 * 60 * 60 * 1000));
+  };
+
+  const goToNextDay = () => {
+    setCurrentDate(prev => new Date(prev.getTime() + 24 * 60 * 60 * 1000));
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('es-ES', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long' 
+    }).format(date);
+  };
+
+  // Check if currentDate is today (for the red line indicator)
+  const isToday = new Date().toDateString() === currentDate.toDateString();
 
   const handleStartBlock = async (id: string) => {
     try {
@@ -117,6 +145,43 @@ export default function DayView({}: DayViewProps) {
 
   return (
     <div style={{ paddingBottom: '100px' }}>
+      
+      {/* Calendar Navigation Header */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        marginBottom: 'var(--space-md)',
+        background: 'var(--glass-bg)',
+        backdropFilter: 'blur(var(--glass-blur))',
+        WebkitBackdropFilter: 'blur(var(--glass-blur))',
+        border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: 'var(--space-sm) var(--space-md)',
+      }}>
+        <button className="btn btn--icon" onClick={goToPreviousDay} aria-label="Día anterior">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '0.9375rem', fontWeight: 600, textTransform: 'capitalize', margin: 0 }}>
+            {formatDate(currentDate)}
+          </h2>
+          {!isToday && (
+            <button 
+              onClick={goToToday}
+              style={{ background: 'none', border: 'none', color: 'var(--color-mental)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', padding: '2px 8px', marginTop: '2px' }}
+            >
+              Volver a Hoy
+            </button>
+          )}
+        </div>
+
+        <button className="btn btn--icon" onClick={goToNextDay} aria-label="Día siguiente">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+
       <DaySummary blocks={sortedBlocks} />
 
       <div style={{ marginTop: 'var(--space-lg)' }}>
@@ -128,6 +193,7 @@ export default function DayView({}: DayViewProps) {
           onTaskToggle={handleTaskToggle}
           onAssignTask={openAssigner}
           onEmptyClick={handleEmptyClick}
+          isToday={isToday}
         />
         
         {sortedBlocks.length === 0 && (
@@ -156,6 +222,7 @@ export default function DayView({}: DayViewProps) {
         onClose={() => setIsCreateOpen(false)}
         onCreated={fetchBlocks}
         initialHour={createInitialHour}
+        targetDate={currentDate}
       />
 
       {assignerState.open && (

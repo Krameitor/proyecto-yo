@@ -7,6 +7,7 @@ interface CreateBlockDialogProps {
   onClose: () => void;
   onCreated: (block: unknown) => void;
   initialHour?: number;
+  targetDate?: Date;
 }
 
 const AREAS = [
@@ -21,7 +22,7 @@ const AREAS = [
   ), colorClass: 'btn--economic' }
 ];
 
-export default function CreateBlockDialog({ open, onClose, onCreated, initialHour }: CreateBlockDialogProps) {
+export default function CreateBlockDialog({ open, onClose, onCreated, initialHour, targetDate = new Date() }: CreateBlockDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [area, setArea] = useState<string>('MENTAL');
   const [title, setTitle] = useState('Bloque Mental');
@@ -33,15 +34,15 @@ export default function CreateBlockDialog({ open, onClose, onCreated, initialHou
 
   useEffect(() => {
     if (open) {
-      const now = new Date();
-      let startH = now.getHours() + 1;
+      const baseDate = targetDate || new Date();
+      let startH = baseDate.getHours() + 1;
       let startM = 0;
       
       if (initialHour !== undefined) {
         startH = initialHour;
       }
       
-      const startD = new Date(now);
+      const startD = new Date(baseDate);
       startD.setHours(startH, startM, 0, 0);
       
       const endD = new Date(startD);
@@ -50,7 +51,7 @@ export default function CreateBlockDialog({ open, onClose, onCreated, initialHou
       setStartTime(toTimeString(startD));
       setEndTime(toTimeString(endD));
     }
-  }, [open, initialHour]);
+  }, [open, initialHour, targetDate]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -102,14 +103,19 @@ export default function CreateBlockDialog({ open, onClose, onCreated, initialHou
     e.preventDefault();
     if (!title.trim() || !startTime || !endTime) return;
 
-    // Convert time strings to today's date objects
-    const startObj = new Date();
+    // Convert time strings to the target date objects
+    const startObj = new Date(targetDate || new Date());
     const [startH, startM] = startTime.split(':').map(Number);
     startObj.setHours(startH, startM, 0, 0);
 
-    const endObj = new Date();
+    const endObj = new Date(targetDate || new Date());
     const [endH, endM] = endTime.split(':').map(Number);
     endObj.setHours(endH, endM, 0, 0);
+
+    // If end is before start, assume it crosses midnight and is the next day
+    if (endObj < startObj) {
+      endObj.setDate(endObj.getDate() + 1);
+    }
 
     try {
       const res = await fetch('/api/time-blocks', {
