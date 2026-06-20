@@ -1317,15 +1317,23 @@ dialog[open]::backdrop {
 }
 
 .rbc-time-content {
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-left: none !important;
 }
 
 .rbc-time-slot {
-  border-color: transparent;
+  border: none !important;
+  background: transparent !important;
 }
 
 .rbc-timeslot-group {
-  border-color: var(--glass-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  min-height: 60px !important;
+}
+
+/* Remove side borders */
+.rbc-day-bg {
+  border-left: 1px dashed rgba(255, 255, 255, 0.02) !important;
 }
 
 .rbc-day-bg + .rbc-day-bg {
@@ -1341,13 +1349,14 @@ dialog[open]::backdrop {
 }
 
 .rbc-time-header-content {
-  border-color: var(--glass-border);
+  border-left: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
 .rbc-time-gutter {
   color: var(--text-tertiary);
   font-size: 0.75rem;
-  background: var(--bg-secondary);
+  background: transparent !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
 .rbc-today {
