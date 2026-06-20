@@ -2,6 +2,12 @@
 
 import React, { useRef, useEffect, useState, type FormEvent } from 'react';
 
+interface Task {
+  id: string;
+  title: string;
+  area: string;
+}
+
 interface CreateBlockDialogProps {
   open: boolean;
   onClose: () => void;
@@ -11,26 +17,38 @@ interface CreateBlockDialogProps {
 }
 
 const AREAS = [
-  { id: 'PHYSICAL', label: 'Física', icon: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-  ), colorClass: 'btn--physical' },
-  { id: 'MENTAL', label: 'Mental', icon: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
-  ), colorClass: 'btn--mental' },
-  { id: 'ECONOMIC', label: 'Económica', icon: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-  ), colorClass: 'btn--economic' }
+  { id: 'PHYSICAL', label: 'Física', colorClass: 'btn--physical' },
+  { id: 'MENTAL', label: 'Mental', colorClass: 'btn--mental' },
+  { id: 'ECONOMIC', label: 'Económica', colorClass: 'btn--economic' }
 ];
 
 export default function CreateBlockDialog({ open, onClose, onCreated, initialHour, targetDate = new Date() }: CreateBlockDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [area, setArea] = useState<string>('MENTAL');
-  const [title, setTitle] = useState('Bloque Mental');
+  
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
+  const [isCreatingNewTask, setIsCreatingNewTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskArea, setNewTaskArea] = useState('MENTAL');
+  const [notes, setNotes] = useState('');
   
   const toTimeString = (d: Date) => d.toTimeString().slice(0, 5);
   
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
+
+  // Fetch tasks
+  useEffect(() => {
+    if (open) {
+      fetch('/api/tasks')
+        .then(res => res.json())
+        .then(data => {
+          setTasks(data);
+          if (data.length > 0) setSelectedTaskId(data[0].id);
+        })
+        .catch(console.error);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -50,6 +68,9 @@ export default function CreateBlockDialog({ open, onClose, onCreated, initialHou
       
       setStartTime(toTimeString(startD));
       setEndTime(toTimeString(endD));
+      setNotes('');
+      setIsCreatingNewTask(false);
+      setNewTaskTitle('');
     }
   }, [open, initialHour, targetDate]);
 
@@ -91,17 +112,33 @@ export default function CreateBlockDialog({ open, onClose, onCreated, initialHou
     };
   }, [onClose]);
 
-  const handleAreaChange = (newArea: string) => {
-    setArea(newArea);
-    const label = AREAS.find(a => a.id === newArea)?.label || '';
-    if (title.startsWith('Bloque')) {
-      setTitle(`Bloque ${label}`);
-    }
-  };
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!title.trim() || !startTime || !endTime) return;
+    if (!startTime || !endTime) return;
+
+    let finalTaskId = selectedTaskId;
+
+    if (isCreatingNewTask) {
+      if (!newTaskTitle.trim()) return;
+      try {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTaskTitle, area: newTaskArea }),
+        });
+        if (res.ok) {
+          const created = await res.json();
+          finalTaskId = created.id;
+        } else {
+          return; // handle error
+        }
+      } catch (err) {
+        console.error('Failed to create new task:', err);
+        return;
+      }
+    }
+
+    if (!finalTaskId) return;
 
     // Convert time strings to the target date objects
     const startObj = new Date(targetDate || new Date());
@@ -122,10 +159,10 @@ export default function CreateBlockDialog({ open, onClose, onCreated, initialHou
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title,
-          area,
+          taskId: finalTaskId,
           startTime: startObj.toISOString(),
           endTime: endObj.toISOString(),
+          notes: notes.trim() ? notes : undefined
         }),
       });
 
@@ -139,90 +176,105 @@ export default function CreateBlockDialog({ open, onClose, onCreated, initialHou
     }
   };
 
-  const selectedAreaObj = AREAS.find(a => a.id === area);
-
   return (
     <dialog ref={dialogRef} closedby="any" style={{ padding: 0 }}>
       <div style={{ padding: 'var(--space-lg)' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
-          <h3 style={{ margin: 0 }}>Nuevo Bloque</h3>
+          <h3 style={{ margin: 0 }}>Agendar Tarea</h3>
           <button className="btn btn--icon" onClick={onClose} type="button" style={{ fontSize: '1rem', background: 'transparent', border: 'none' }}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
             
-            {/* Area selection */}
+            {/* Task selection / creation */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>
-                Área de Inversión
-              </label>
-              <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                {AREAS.map(a => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onClick={() => handleAreaChange(a.id)}
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: 'var(--space-sm)',
-                      background: area === a.id ? `var(--color-${a.id.toLowerCase()}-soft)` : 'var(--bg-elevated)',
-                      border: `1px solid ${area === a.id ? `var(--color-${a.id.toLowerCase()})` : 'var(--glass-border)'}`,
-                      borderRadius: 'var(--radius-sm)',
-                      color: area === a.id ? `var(--color-${a.id.toLowerCase()})` : 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {a.icon}
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{a.label}</span>
-                  </button>
-                ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-xs)' }}>
+                <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Tarea a realizar
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingNewTask(!isCreatingNewTask)}
+                  style={{ fontSize: '0.75rem', color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  {isCreatingNewTask ? 'Seleccionar existente' : '+ Crear nueva'}
+                </button>
               </div>
+
+              {isCreatingNewTask ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Título de la nueva tarea"
+                    value={newTaskTitle}
+                    onChange={e => setNewTaskTitle(e.target.value)}
+                    required
+                  />
+                  <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                    {AREAS.map(a => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => setNewTaskArea(a.id)}
+                        style={{
+                          flex: 1,
+                          padding: 'var(--space-sm)',
+                          background: newTaskArea === a.id ? `var(--color-${a.id.toLowerCase()}-soft)` : 'var(--bg-elevated)',
+                          border: `1px solid ${newTaskArea === a.id ? `var(--color-${a.id.toLowerCase()})` : 'var(--glass-border)'}`,
+                          borderRadius: 'var(--radius-sm)',
+                          color: newTaskArea === a.id ? `var(--color-${a.id.toLowerCase()})` : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <select
+                  className="input"
+                  value={selectedTaskId}
+                  onChange={(e) => setSelectedTaskId(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>Selecciona una tarea</option>
+                  {tasks.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title} ({AREAS.find(a => a.id === t.area)?.label})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
-            {/* Title */}
-            <div>
-              <label htmlFor="block-title" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-xs)' }}>
-                Título
-              </label>
-              <input
-                id="block-title"
-                type="text"
-                className="input"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Times */}
-            <div style={{ display: 'flex', gap: 'var(--space-md)' }}>
+            {/* Time */}
+            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
               <div style={{ flex: 1 }}>
-                <label htmlFor="start-time" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-xs)' }}>
+                <label htmlFor="block-start" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-xs)' }}>
                   Inicio
                 </label>
                 <input
-                  id="start-time"
+                  id="block-start"
                   type="time"
-                  className="input font-data"
+                  className="input"
                   value={startTime}
                   onChange={e => setStartTime(e.target.value)}
                   required
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label htmlFor="end-time" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-xs)' }}>
+                <label htmlFor="block-end" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-xs)' }}>
                   Fin
                 </label>
                 <input
-                  id="end-time"
+                  id="block-end"
                   type="time"
-                  className="input font-data"
+                  className="input"
                   value={endTime}
                   onChange={e => setEndTime(e.target.value)}
                   required
@@ -230,8 +282,27 @@ export default function CreateBlockDialog({ open, onClose, onCreated, initialHou
               </div>
             </div>
 
-            <button type="submit" className={`btn btn--lg ${selectedAreaObj?.colorClass}`} style={{ width: '100%', marginTop: 'var(--space-sm)' }}>
-              Crear Bloque
+            {/* Notes */}
+            <div>
+              <label htmlFor="block-notes" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-xs)' }}>
+                Notas del Bloque (Opcional)
+              </label>
+              <textarea
+                id="block-notes"
+                className="input"
+                style={{ resize: 'vertical', minHeight: '60px' }}
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Ej: Solo leer el capítulo 1 y 2"
+              />
+            </div>
+            
+            <button 
+              type="submit" 
+              className={`btn btn--primary`}
+              style={{ marginTop: 'var(--space-md)' }}
+            >
+              Agendar Tarea
             </button>
           </div>
         </form>

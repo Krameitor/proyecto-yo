@@ -29,17 +29,15 @@ model Task {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  timeBlockTasks  TimeBlockTask[]
-  timeAllocations TimeAllocation[]
+  timeBlocks  TimeBlock[]
 }
 
 model TimeBlock {
   id           String    @id @default(cuid())
-  title        String
+  taskId       String
   startTime    DateTime
   endTime      DateTime
   totalMinutes Int
-  area         String    // PHYSICAL | MENTAL | ECONOMIC
   notes        String?
   status       String    @default("SCHEDULED") // SCHEDULED | ACTIVE | COMPLETED
   
@@ -47,38 +45,10 @@ model TimeBlock {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  tasks        TimeBlockTask[]
-  allocations  TimeAllocation[]
+  task         Task      @relation(fields: [taskId], references: [id])
   moodCheckin  MoodCheckin?
 }
 
-model TimeBlockTask {
-  id          String    @id @default(cuid())
-  timeBlockId String
-  taskId      String
-  isOriginal  Boolean   @default(true) // true = planned, false = added during block
-  
-  createdAt   DateTime  @default(now())
-  deletedAt   DateTime?
-
-  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id])
-  task        Task      @relation(fields: [taskId], references: [id])
-}
-
-model TimeAllocation {
-  id          String    @id @default(cuid())
-  timeBlockId String
-  taskId      String
-  percentage  Float     // 0-100
-  minutes     Int
-  type        String    // PLANNED | UNPLANNED
-  
-  createdAt   DateTime  @default(now())
-  deletedAt   DateTime?
-
-  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id])
-  task        Task      @relation(fields: [taskId], references: [id])
-}
 
 model MoodCheckin {
   id                String    @id @default(cuid())

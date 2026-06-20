@@ -6,7 +6,9 @@ interface DaySummaryProps {
   blocks: Array<{
     id: string;
     status: string;
-    area: string;
+    task?: {
+      area: string;
+    };
     totalMinutes: number;
   }>;
 }
@@ -19,7 +21,10 @@ export default function DaySummary({ blocks }: DaySummaryProps) {
   const completionPercentage = totalBlocks === 0 ? 0 : Math.round((completedBlocks / totalBlocks) * 100);
 
   const minutesByArea = blocks.reduce((acc, b) => {
-    acc[b.area] = (acc[b.area] || 0) + b.totalMinutes;
+    const area = b.task?.area;
+    if (area) {
+      acc[area] = (acc[area] || 0) + b.totalMinutes;
+    }
     return acc;
   }, {} as Record<string, number>);
 

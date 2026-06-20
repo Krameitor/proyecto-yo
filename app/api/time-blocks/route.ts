@@ -19,18 +19,7 @@ export async function GET(request: NextRequest) {
           : {}),
       },
       include: {
-        tasks: {
-          where: { deletedAt: null },
-          include: {
-            task: true,
-          },
-        },
-        allocations: {
-          where: { deletedAt: null },
-          include: {
-            task: true,
-          },
-        },
+        task: true,
         moodCheckin: true,
       },
       orderBy: { startTime: 'asc' },
@@ -50,19 +39,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, startTime, endTime, area, taskIds } = body
+    const { taskId, startTime, endTime, notes } = body
 
-    if (!title || !startTime || !endTime || !area) {
+    if (!taskId || !startTime || !endTime) {
       return NextResponse.json(
-        { error: 'title, startTime, endTime, and area are required' },
-        { status: 400 }
-      )
-    }
-
-    const validAreas = ['PHYSICAL', 'MENTAL', 'ECONOMIC']
-    if (!validAreas.includes(area)) {
-      return NextResponse.json(
-        { error: `area must be one of: ${validAreas.join(', ')}` },
+        { error: 'taskId, startTime, and endTime are required' },
         { status: 400 }
       )
     }
@@ -80,26 +61,14 @@ export async function POST(request: NextRequest) {
 
     const timeBlock = await prisma.timeBlock.create({
       data: {
-        title,
+        taskId,
         startTime: start,
         endTime: end,
         totalMinutes,
-        area,
-        tasks: {
-          create:
-            taskIds?.map((taskId: string) => ({
-              taskId,
-              isOriginal: true,
-            })) ?? [],
-        },
+        notes,
       },
       include: {
-        tasks: {
-          where: { deletedAt: null },
-          include: {
-            task: true,
-          },
-        },
+        task: true,
       },
     })
 

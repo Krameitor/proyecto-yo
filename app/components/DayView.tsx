@@ -7,7 +7,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import CreateBlockDialog from './CreateBlockDialog';
-import TaskAssigner from './TaskAssigner';
+
 import TimeTracker from './TimeTracker';
 import BlockDetailsDialog from './BlockDetailsDialog';
 
@@ -39,12 +39,7 @@ export default function DayView({}: DayViewProps) {
   
   const [detailsState, setDetailsState] = useState<{ open: boolean; block: any }>({ open: false, block: null });
   
-  const [assignerState, setAssignerState] = useState<{ open: boolean; blockId: string; area: string; existingIds: string[] }>({
-    open: false,
-    blockId: '',
-    area: '',
-    existingIds: []
-  });
+
   
   const [completedBlockId, setCompletedBlockId] = useState<string | null>(null);
 
@@ -87,8 +82,8 @@ export default function DayView({}: DayViewProps) {
         // Map to Calendar Events
         const mappedEvents = data.map((b: any) => ({
           id: b.id,
-          title: b.title,
           start: new Date(b.startTime),
+          title: b.task?.title || 'Sin Tarea',
           end: new Date(b.endTime),
           resource: b,
           isDraggable: b.status === 'SCHEDULED',
@@ -163,8 +158,8 @@ export default function DayView({}: DayViewProps) {
   };
 
   const eventPropGetter = (event: any) => {
-    const area = event.resource.area.toLowerCase();
-    const status = event.resource.status.toLowerCase();
+    const area = event.resource.task?.area?.toLowerCase() || 'physical';
+    const status = event.resource.status?.toLowerCase() || 'scheduled';
     return {
       className: `area-${area} event-${status}`
     };
@@ -231,13 +226,7 @@ export default function DayView({}: DayViewProps) {
     }
   };
 
-  const openAssigner = (blockId: string, area: string) => {
-    const block = blocks.find(b => b.id === blockId);
-    if (!block) return;
-    const existingIds = block.tasks.map((bt: any) => bt.taskId);
-    setAssignerState({ open: true, blockId, area, existingIds });
-    setDetailsState({ open: false, block: null }); // close details when opening assigner
-  };
+
 
   return (
     <div style={{ height: 'calc(100vh - 80px)', paddingBottom: '100px', display: 'flex', flexDirection: 'column' }}>
@@ -289,22 +278,8 @@ export default function DayView({}: DayViewProps) {
         onEndBlock={handleEndBlock}
         onDeleteBlock={handleDeleteBlock}
         onTaskToggle={handleTaskToggle}
-        onAssignTask={openAssigner}
       />
 
-      {assignerState.open && (
-        <TaskAssigner
-          open={assignerState.open}
-          blockId={assignerState.blockId}
-          area={assignerState.area}
-          existingTaskIds={assignerState.existingIds}
-          onClose={() => setAssignerState({ ...assignerState, open: false })}
-          onAssigned={() => {
-            fetchBlocks(date, view);
-            // optionally reopen block details here
-          }}
-        />
-      )}
 
       {completedBlockId && (
         <TimeTracker

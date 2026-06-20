@@ -10,7 +10,6 @@ interface BlockDetailsDialogProps {
   onEndBlock: (id: string) => void;
   onDeleteBlock: (id: string) => void;
   onTaskToggle: (taskId: string, completed: boolean) => void;
-  onAssignTask: (blockId: string, area: string) => void;
 }
 
 export default function BlockDetailsDialog({
@@ -20,8 +19,7 @@ export default function BlockDetailsDialog({
   onStartBlock,
   onEndBlock,
   onDeleteBlock,
-  onTaskToggle,
-  onAssignTask
+  onTaskToggle
 }: BlockDetailsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -36,23 +34,25 @@ export default function BlockDetailsDialog({
     }
   }, [open]);
 
-  if (!block) return null;
+  if (!block || !block.task) return null;
 
   const isScheduled = block.status === 'SCHEDULED';
   const isActive = block.status === 'ACTIVE';
   const isCompleted = block.status === 'COMPLETED';
+  
+  const area = block.task.area.toLowerCase();
 
   return (
     <dialog ref={dialogRef} className="glass-card" style={{ padding: 'var(--space-lg)', maxWidth: '400px', width: '90vw' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-md)' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: `var(--color-${block.area.toLowerCase()})` }} />
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: `var(--color-${area})` }} />
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-              {block.area}
+              {block.task.area}
             </span>
           </div>
-          <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{block.title}</h3>
+          <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{block.task.title}</h3>
           <p className="font-data" style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '4px' }}>
             {new Date(block.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(block.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
           </p>
@@ -61,40 +61,31 @@ export default function BlockDetailsDialog({
       </div>
 
       <div style={{ marginBottom: 'var(--space-lg)' }}>
-        <h4 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>Tareas</h4>
-        {block.tasks && block.tasks.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {block.tasks.map((bt: any) => (
-              <label key={bt.taskId} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={bt.task.status === 'COMPLETED'}
-                  onChange={(e) => onTaskToggle(bt.taskId, e.target.checked)}
-                />
-                <span style={{ fontSize: '0.875rem', textDecoration: bt.task.status === 'COMPLETED' ? 'line-through' : 'none', color: bt.task.status === 'COMPLETED' ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>
-                  {bt.task.title}
-                </span>
-              </label>
-            ))}
-          </div>
-        ) : (
-          <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>No hay tareas asignadas a este bloque.</p>
-        )}
+        <h4 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>Estado de la Tarea</h4>
         
-        {!isCompleted && (
-          <button 
-            onClick={() => onAssignTask(block.id, block.area)}
-            style={{ background: 'none', border: 'none', color: `var(--color-${block.area.toLowerCase()})`, fontSize: '0.875rem', fontWeight: 600, marginTop: '12px', cursor: 'pointer', padding: 0 }}
-          >
-            + Asignar tarea
-          </button>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={block.task.status === 'COMPLETED'}
+            onChange={(e) => onTaskToggle(block.task.id, e.target.checked)}
+          />
+          <span style={{ fontSize: '0.875rem', textDecoration: block.task.status === 'COMPLETED' ? 'line-through' : 'none', color: block.task.status === 'COMPLETED' ? 'var(--text-tertiary)' : 'var(--text-primary)' }}>
+            Marcar tarea como completada
+          </span>
+        </label>
+        
+        {block.notes && (
+          <div style={{ marginTop: 'var(--space-md)' }}>
+            <h4 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-xs)' }}>Notas del Bloque</h4>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', margin: 0 }}>{block.notes}</p>
+          </div>
         )}
       </div>
 
       <div style={{ display: 'flex', gap: '8px' }}>
         {isScheduled && (
           <>
-            <button className={`btn btn--${block.area.toLowerCase()}`} style={{ flex: 1 }} onClick={() => { onStartBlock(block.id); onClose(); }}>
+            <button className={`btn btn--${area}`} style={{ flex: 1 }} onClick={() => { onStartBlock(block.id); onClose(); }}>
               ▶ Iniciar
             </button>
             <button className="btn" onClick={() => { onDeleteBlock(block.id); onClose(); }}>
@@ -103,13 +94,13 @@ export default function BlockDetailsDialog({
           </>
         )}
         {isActive && (
-          <button className={`btn btn--${block.area.toLowerCase()}`} style={{ flex: 1 }} onClick={() => { onEndBlock(block.id); onClose(); }}>
+          <button className={`btn btn--${area}`} style={{ flex: 1 }} onClick={() => { onEndBlock(block.id); onClose(); }}>
             ⏹ Terminar Bloque
           </button>
         )}
         {isCompleted && (
           <div style={{ flex: 1, textAlign: 'center', color: 'var(--color-success)', fontWeight: 600, padding: 'var(--space-sm) 0' }}>
-            ✓ Completado
+            ✓ Bloque Completado
           </div>
         )}
       </div>

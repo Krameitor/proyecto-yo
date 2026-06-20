@@ -21,14 +21,11 @@ export async function GET(request: NextRequest) {
           status: 'ACTIVE',
           ...(area ? { area } : {}),
           NOT: {
-            timeBlockTasks: {
+            timeBlocks: {
               some: {
                 deletedAt: null,
-                timeBlock: {
-                  deletedAt: null,
-                  startTime: { gte: dayStart },
-                  endTime: { lte: dayEnd },
-                },
+                startTime: { gte: dayStart },
+                endTime: { lte: dayEnd },
               },
             },
           },
@@ -38,6 +35,11 @@ export async function GET(request: NextRequest) {
           { sortOrder: 'asc' },
           { createdAt: 'desc' },
         ],
+        include: {
+          timeBlocks: {
+            where: { deletedAt: null },
+          },
+        },
       })
 
       return NextResponse.json(tasks)
@@ -53,6 +55,11 @@ export async function GET(request: NextRequest) {
         { sortOrder: 'asc' },
         { createdAt: 'desc' },
       ],
+      include: {
+        timeBlocks: {
+          where: { deletedAt: null },
+        },
+      },
     })
 
     return NextResponse.json(tasks)

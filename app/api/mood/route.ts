@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         timeBlock: {
-          select: { id: true, title: true, startTime: true, endTime: true },
+          select: { id: true, startTime: true, endTime: true, task: { select: { title: true } } },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         timeBlock: {
-          select: { id: true, title: true },
+          select: { id: true, task: { select: { title: true } } },
         },
       },
     })
