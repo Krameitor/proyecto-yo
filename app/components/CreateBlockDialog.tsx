@@ -6,6 +6,7 @@ interface CreateBlockDialogProps {
   open: boolean;
   onClose: () => void;
   onCreated: (block: unknown) => void;
+  initialHour?: number;
 }
 
 const AREAS = [
@@ -20,21 +21,36 @@ const AREAS = [
   ), colorClass: 'btn--economic' }
 ];
 
-export default function CreateBlockDialog({ open, onClose, onCreated }: CreateBlockDialogProps) {
+export default function CreateBlockDialog({ open, onClose, onCreated, initialHour }: CreateBlockDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [area, setArea] = useState<string>('MENTAL');
   const [title, setTitle] = useState('Bloque Mental');
   
-  const now = new Date();
-  const nextHour = new Date(now);
-  nextHour.setHours(now.getHours() + 1, 0, 0, 0);
-  const plusTwo = new Date(nextHour);
-  plusTwo.setHours(nextHour.getHours() + 2);
-  
   const toTimeString = (d: Date) => d.toTimeString().slice(0, 5);
   
-  const [startTime, setStartTime] = useState(toTimeString(nextHour));
-  const [endTime, setEndTime] = useState(toTimeString(plusTwo));
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      const now = new Date();
+      let startH = now.getHours() + 1;
+      let startM = 0;
+      
+      if (initialHour !== undefined) {
+        startH = initialHour;
+      }
+      
+      const startD = new Date(now);
+      startD.setHours(startH, startM, 0, 0);
+      
+      const endD = new Date(startD);
+      endD.setHours(startD.getHours() + 2);
+      
+      setStartTime(toTimeString(startD));
+      setEndTime(toTimeString(endD));
+    }
+  }, [open, initialHour]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

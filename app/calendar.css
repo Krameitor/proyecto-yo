@@ -1,0 +1,105 @@
+/* --- Calendar Grid --- */
+.calendar-grid {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  overflow: hidden;
+}
+
+.calendar-grid-scroll {
+  position: relative;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100dvh - 250px);
+}
+
+.calendar-row {
+  height: 60px; /* 1 minute = 1 pixel */
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+  display: flex;
+  box-sizing: border-box;
+}
+
+.calendar-row:last-child {
+  border-bottom: none;
+}
+
+.calendar-time-label {
+  width: 50px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 10px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-family: var(--font-data);
+  transform: translateY(-50%); /* Center on the line */
+  user-select: none;
+}
+
+.calendar-row-content {
+  flex: 1;
+  position: relative;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Used to capture clicks for creating blocks */
+.calendar-clickable-area {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+}
+
+.calendar-clickable-area:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.calendar-current-time-line {
+  position: absolute;
+  left: 50px;
+  right: 0;
+  height: 2px;
+  background: var(--color-error); /* Red line */
+  z-index: 10;
+  pointer-events: none;
+}
+
+.calendar-current-time-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-error);
+}
+
+.calendar-block-wrapper {
+  position: absolute;
+  left: 55px; /* Offset past the time label + border */
+  right: 8px; /* Leave some right margin */
+  z-index: 5;
+  transition: all 0.2s ease;
+}
+
+/* Modifying the card to look good in vertical constraints */
+.calendar-block-wrapper .time-block-card {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-block-wrapper .time-block-card__tasks {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Hide some elements if height is too small */
+.calendar-block-wrapper.compact .time-block-card__tasks,
+.calendar-block-wrapper.compact .time-block-card-actions {
+  display: none !important;
+}

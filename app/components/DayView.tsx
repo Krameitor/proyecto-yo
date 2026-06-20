@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import DaySummary from './DaySummary';
+import CalendarGrid from './CalendarGrid';
 import TimeBlockCard from './TimeBlockCard';
 import CreateBlockDialog from './CreateBlockDialog';
 import TaskAssigner from './TaskAssigner';
@@ -13,6 +14,7 @@ export default function DayView({}: DayViewProps) {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createInitialHour, setCreateInitialHour] = useState<number | undefined>();
   const [assignerState, setAssignerState] = useState<{ open: boolean; blockId: string; area: string; existingIds: string[] }>({
     open: false,
     blockId: '',
@@ -105,37 +107,43 @@ export default function DayView({}: DayViewProps) {
     return <div style={{ padding: 'var(--space-xl) 0', textAlign: 'center', color: 'var(--text-tertiary)' }}>Cargando tu día...</div>;
   }
 
-  // Sort blocks by start time
+  // Sort blocks by start time for the summary (CalendarGrid handles its own visual positioning)
   const sortedBlocks = [...blocks].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+  const handleEmptyClick = (hour: number) => {
+    setCreateInitialHour(hour);
+    setIsCreateOpen(true);
+  };
 
   return (
     <div style={{ paddingBottom: '100px' }}>
       <DaySummary blocks={sortedBlocks} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', marginTop: 'var(--space-lg)' }}>
-        {sortedBlocks.map(block => (
-          <TimeBlockCard
-            key={block.id}
-            block={block}
-            onStartBlock={handleStartBlock}
-            onEndBlock={handleEndBlock}
-            onDeleteBlock={handleDeleteBlock}
-            onTaskToggle={handleTaskToggle}
-            onAssignTask={openAssigner}
-          />
-        ))}
-
+      <div style={{ marginTop: 'var(--space-lg)' }}>
+        <CalendarGrid 
+          blocks={sortedBlocks}
+          onStartBlock={handleStartBlock}
+          onEndBlock={handleEndBlock}
+          onDeleteBlock={handleDeleteBlock}
+          onTaskToggle={handleTaskToggle}
+          onAssignTask={openAssigner}
+          onEmptyClick={handleEmptyClick}
+        />
+        
         {sortedBlocks.length === 0 && (
-          <div className="glass-card" style={{ textAlign: 'center', padding: 'var(--space-xl) var(--space-md)' }}>
+          <div style={{ textAlign: 'center', padding: 'var(--space-xl) var(--space-md)' }}>
             <div style={{ fontSize: '3rem', marginBottom: 'var(--space-sm)' }}>🌅</div>
             <h3 style={{ marginBottom: 'var(--space-xs)' }}>Lienzo en blanco</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Aún no has planificado ningún bloque para hoy.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Toca en cualquier hora para crear tu primer bloque del día.</p>
           </div>
         )}
 
         <button 
           className="btn glass-card" 
-          onClick={() => setIsCreateOpen(true)}
+          onClick={() => {
+            setCreateInitialHour(undefined);
+            setIsCreateOpen(true);
+          }}
           style={{ width: '100%', marginTop: 'var(--space-md)', borderStyle: 'dashed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--text-primary)' }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -147,6 +155,7 @@ export default function DayView({}: DayViewProps) {
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreated={fetchBlocks}
+        initialHour={createInitialHour}
       />
 
       {assignerState.open && (
