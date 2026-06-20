@@ -1321,7 +1321,7 @@ dialog[open]::backdrop {
 }
 
 .rbc-time-slot {
-  border-color: rgba(255,255,255,0.05);
+  border-color: transparent;
 }
 
 .rbc-timeslot-group {
